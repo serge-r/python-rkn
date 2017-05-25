@@ -10,12 +10,9 @@ DUMPVER = '2.2'
 
 def sendQuery(wsdlClient, queryFile, queryFileSing):
     '''
-    Caption
+    Send a request to rkn
+    Returns code string or None if error
     '''
-
-    # methods = [method for method in client.wsdl.services[0].ports[0].methods]
-    # print(methods)
-
     request = b64encode(queryFile.read()).decode()
     request_sign = b64encode(queryFileSing.read()).decode()
 
@@ -36,7 +33,9 @@ def sendQuery(wsdlClient, queryFile, queryFileSing):
 
 
 def getFile(wsdlClient, codeString):
-    ''' Try to download file from RKN
+    ''' 
+    Try to download file from RKN
+    Returns archive or None if error
     '''
     try:
         while True:
@@ -55,11 +54,11 @@ def getFile(wsdlClient, codeString):
     except:
         print('Some exception')
         return None
-# archive = b64decode(str.encode(result['registerZipArchive']))
 
 
 def addArgs():
     '''
+    Init command-line args
     '''
     parser = ArgumentParser()
     parser.add_argument("query",
@@ -76,7 +75,7 @@ def addArgs():
 
 def main():
     '''
-    I like to move it, move it...
+    Start point
     '''
     args = addArgs()
     client = Client(URL, cache=None)

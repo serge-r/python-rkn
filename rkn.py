@@ -3,9 +3,13 @@ from suds.client import Client
 from argparse import ArgumentParser, FileType
 import time
 
+# Test URL
 # URL = 'http://vigruzki.rkn.gov.ru/services/OperatorRequestTest/?wsdl'
 URL = 'http://vigruzki.rkn.gov.ru/services/OperatorRequest/?wsdl'
+# Request format
 DUMPVER = '2.2'
+# Max number of attempts to downloading file
+MAXTRIES = 5 
 
 
 def sendQuery(wsdlClient, queryFile, queryFileSing):
@@ -20,15 +24,15 @@ def sendQuery(wsdlClient, queryFile, queryFileSing):
         result = wsdlClient.service.sendRequest(requestFile=request,
                                                 signatureFile=request_sign,
                                                 dumpFormatVersion=DUMPVER)
-    except:
-        print('Some exception')
+    except Exception as e:
+        print('Error send request', e)
         return None
 
     if result['result'] == True:
         print(result['code'])
         return(result['code'])
     else:
-        print(result['resultComment '])
+        print(result['resultComment'])
         return None
 
 
@@ -37,22 +41,31 @@ def getFile(wsdlClient, codeString):
     Try to download file from RKN
     Returns archive or None if error
     '''
-    try:
-        while True:
-            result = wsdlClient.service.getResult(code=codeString)
-            if result['result'] == True:
-                    if result['resultCode'] == 1:
+    tries = 0
 
-                        print("Download success")
-                        return result['registerZipArchive']
-                    else:
-                        print(result['resultComment'])
-                        return None
-            else:
-                print(result['resultComment'])
+    try:
+        while tries < MAXTRIES:
+            result = wsdlClient.service.getResult(code=codeString)
+
+            if result['resultCode'] == 0:
+                print('Wait 60 seconds: ', result['resultComment'])
                 time.sleep(60)
-    except:
-        print('Some exception')
+                tries += 1
+                continue
+
+            elif result['resultCode'] == 1:
+                print('Download success')
+                return result['registerZipArchive']
+
+            else:
+                print("Error: ", result['resultComment'])
+                return None
+
+        print("All tries exceeded")
+        return None
+
+    except Exception as e:
+        print('Some exception ', e)
         return None
 
 
@@ -78,20 +91,31 @@ def main():
     Start point
     '''
     args = addArgs()
-    client = Client(URL, cache=None)
+    try:
+        client = Client(URL, cache=None)
+
+    except Exception as e:
+        print("Error init the client: ", e)
+        exit(1)
 
     code = sendQuery(client, args.query, args.querySign)
 
     if code:
         zipfile = getFile(client, code)
 
-        with open(args.output, 'wb') as file:
-            content = b64decode(zipfile.encode())
-            bytes = file.write(content)
-            print("File {} was writed. Size: {} MB".format(args.output,round(bytes/2048,2)))
+        if zipfile:
+            print("Writing file ", args.output)
+           try: 
+                with open(args.output, 'wb') as file:
+                    content = b64decode(zipfile.encode())
+                    bytes = file.write(content)
+                    print("File {} was writed. Size: {} KB".format(args.output, round(bytes/1048, 2)))
+            except Exception as e:
+                print("Error writing file", e)
 
     args.query.close()
     args.querySign.close()
+    exit(0)
 
 
 if __name__ == '__main__':

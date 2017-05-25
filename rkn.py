@@ -1,6 +1,7 @@
 from base64 import b64encode, b64decode
 from suds.client import Client
 from argparse import ArgumentParser, FileType
+import logging
 import time
 
 # Test URL
@@ -9,7 +10,9 @@ URL = 'http://vigruzki.rkn.gov.ru/services/OperatorRequest/?wsdl'
 # Request format
 DUMPVER = '2.2'
 # Max number of attempts to downloading file
-MAXTRIES = 5 
+MAXTRIES = 5
+# Log format
+LOGFORMAT = '%(asctime)s %(levelname)s %(message)s'
 
 
 def sendQuery(wsdlClient, queryFile, queryFileSing):
@@ -37,7 +40,7 @@ def sendQuery(wsdlClient, queryFile, queryFileSing):
 
 
 def getFile(wsdlClient, codeString):
-    ''' 
+    '''
     Try to download file from RKN
     Returns archive or None if error
     '''
@@ -91,6 +94,9 @@ def main():
     Start point
     '''
     args = addArgs()
+    formatter = logging.Formatter(LOGFORMAT)
+    logging.basicConfig(format=formatter, level=logging.DEBUG)
+
     try:
         client = Client(URL, cache=None)
 
@@ -105,7 +111,8 @@ def main():
 
         if zipfile:
             print("Writing file ", args.output)
-           try: 
+
+            try:
                 with open(args.output, 'wb') as file:
                     content = b64decode(zipfile.encode())
                     bytes = file.write(content)

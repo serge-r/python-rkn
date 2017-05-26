@@ -126,7 +126,12 @@ def main():
 
     formatter = logging.Formatter(LOGFORMAT)
 
-    logFile = logging.FileHandler(args.logfile)
+    try:
+        logFile = logging.FileHandler(args.logfile)
+
+    except Exception as e:
+        print("Cannot log to {} error is {}".format( args.logfile))
+
     logFile.setFormatter(formatter)
     logFile.setLevel(level)
 

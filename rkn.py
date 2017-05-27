@@ -5,8 +5,8 @@ import logging
 import time
 
 # Test URL
-URL = 'http://vigruzki.rkn.gov.ru/services/OperatorRequestTest/?wsdl'
-# URL = 'http://vigruzki.rkn.gov.ru/services/OperatorRequest/?wsdl'
+# URL = 'http://vigruzki.rkn.gov.ru/services/OperatorRequestTest/?wsdl'
+URL = 'http://vigruzki.rkn.gov.ru/services/OperatorRequest/?wsdl'
 # Request format
 DUMPVER = '2.2'
 # Max number of attempts to downloading file
@@ -14,7 +14,7 @@ MAXTRIES = 5
 # Log format
 LOGFORMAT = '%(asctime)s %(levelname)s Line:%(lineno)d %(message)s'
 # Logging levels
-LEVELS = ("INFO", "ERROR")
+LEVELS = ("DEBUG", "INFO", "ERROR")
 
 
 def sendQuery(wsdlClient, queryFile, queryFileSing):
@@ -62,6 +62,8 @@ def getFile(wsdlClient, codeString):
 
             elif result['resultCode'] == 1:
                 logger.info('Download success')
+                logger.debug("Operator: " + result['operatorName'])
+                logger.debug("INN: " + result['inn'])
                 return result['registerZipArchive']
 
             else:
@@ -96,7 +98,7 @@ def addArgs():
                         "--severity",
                         help="""
                         Logging severity.
-                        Might be INFO or ERROR
+                        Might be DEBUG, INFO or ERROR
                         """,
                         default="INFO")
     args = parser.parse_args()
@@ -131,8 +133,8 @@ def main():
             logFile = logging.FileHandler(args.logfile)
 
         except Exception as e:
-            print("Cannot log to {} error is {}".format(args.logfile, e))
-            print("logging to console")
+            logger.warning("Cannot log to {} error is {}".format(args.logfile, e))
+            logger.warning("logging to console")
         else:
             logger.addHandler(logFile)
             logFile.setFormatter(formatter)

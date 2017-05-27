@@ -91,12 +91,7 @@ def addArgs():
                         help="File to save information from RKN")
     parser.add_argument("-l",
                         "--logfile",
-                        help="File for write logs.",
-                        default="rkn.log")
-    parser.add_argument("-p",
-                        "--print",
-                        action='store_true',
-                        help="Print logginig messages only to console")
+                        help="File for write logs.")
     parser.add_argument("-s",
                         "--severity",
                         help="""
@@ -126,23 +121,23 @@ def main():
 
     formatter = logging.Formatter(LOGFORMAT)
 
-    try:
-        logFile = logging.FileHandler(args.logfile)
+    console = logging.StreamHandler()
+    console.setFormatter(formatter)
+    console.setLevel(level)
+    logger.addHandler(console)
 
-    except Exception as e:
-        print("Cannot log to {} error is {}".format( args.logfile))
+    if args.logfile:
+        try:
+            logFile = logging.FileHandler(args.logfile)
 
-    logFile.setFormatter(formatter)
-    logFile.setLevel(level)
-
-    if args.print:
-        console = logging.StreamHandler()
-        console.setFormatter(formatter)
-        console.setLevel(level)
-
-        logger.addHandler(console)
-    else:
-        logger.addHandler(logFile)
+        except Exception as e:
+            print("Cannot log to {} error is {}".format(args.logfile, e))
+            print("logging to console")
+        else:
+            logger.addHandler(logFile)
+            logFile.setFormatter(formatter)
+            logFile.setLevel(level)
+            logger.removeHandler(console)
 
     logger.info("Script started")
 

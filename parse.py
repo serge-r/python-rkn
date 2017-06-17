@@ -1,11 +1,11 @@
-import re
+import socket
+import time
 from lxml import etree
+from urllib.parse import urlparse
 
 FILE_NAME = 'dump.xml'
 temp_list = []
-
-protocol_re = re.compile("https:\/\/(.)*")
-domain_re = re.compile("(([\w\.]+)\.(\w)+)")
+domains = []
 
 parser = etree.parse(FILE_NAME)
 root = parser.getroot()
@@ -18,9 +18,20 @@ for node in root:
 
 	temp_list.append(temp_dict)
 
+del(temp_dict)
+
 for item in temp_list:
-	if protocol_re.match(item.get('url',"fail")):
-		url = item.get('url',"fail")
-		result = domain_re.match(url)
-		if result:
-			print(result.group())
+	res = urlparse(item.get('url','fail'))
+	if res.scheme == 'https':
+		domains.append(res.hostname)
+		#print(item.get('url'))
+
+for item in set(domains):
+	try:
+		ip = socket.gethostbyname(item)
+		print(item,ip)
+	except Exception as e:
+		print ("Cannot resolve {} error: {}".format(item,e))
+	#time.sleep(1)
+
+#print(len(domains))

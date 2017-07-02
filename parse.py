@@ -1,56 +1,53 @@
-import socket
-import asyncio
-import time
 from lxml import etree
 from urllib.parse import urlparse
 
+
 FILE_NAME = 'dump.xml'
-temp_list = []
-domains = []
 
-async def resolve(url):
-	try:
-		ip = socket.gethostbyname(url)
-		msg = "Host: {} address: {}".format(url, ip)
-	except Exception as e:
-		msg = "Cannot resolve {} error is {}".format(url, e)
-	print(msg)
-	return msg
+def parse(dump):
+	records = []
 
+	blocked_ips = []
+	blocked_subnets = []
+	blocked_domains = []
+	blocked_urls = []
 
-async def start(urls):
-	coroutines = [resolve(url) for url in urls]
-	completed, pending = await asyncio.wait(coroutines)
-	for item in completed:
-		#print(item.result())
-		pass
-
-def main():
-	parser = etree.parse(FILE_NAME)
+	parser = etree.parse(dump)
 	root = parser.getroot()
 
 	for node in root:
-		temp_dict = {}
 
-		for element in node:
-			temp_dict[element.tag] = element.text
+		records.append({  'urls':		[item.text for item in node if item.tag == 'url'], 
+						  'domains': 	[item.text for item in node if item.tag == 'domain'],
+						  'ips': 		[item.text for item in node if item.tag == 'ip'],
+						  'subnets': 	[item.text for item in node if item.tag == 'ipSubnet']
+						  })
 
-		temp_list.append(temp_dict)
+	for record in records:
 
-	del(temp_dict)
+		#print("Value is: {}".format(record))
+		for subnet in record['subnets']:
+			blocked_subnets.append(subnet)
 
-	for item in temp_list:
-		res = urlparse(item.get('url','fail'))
-		if res.scheme == 'https':
-			domains.append(res.hostname)
-	
-	testurls = ['google.com', 'ya.ru', 'lib.ru', 'vk.com']
-	event_loop = asyncio.get_event_loop()
+		for url in record['urls']:
+			res = urlparse(url)
+			if res.scheme == 'https' or (record['urls'] == [] and record['domains'] == []):
+				# print("Domain {} will blocked by IPs {}".format(res.hostname, record['ips']))
+				blocked_ips.append(record['ips'])
+			elif res.scheme == 'http':
+				blocked_urls.append(url)
+				
 
-	try:
-		event_loop.run_until_complete(start(domains))
-	finally:
-		event_loop.close()
+	subnets_set = set(blocked_subnets)
+	ip_set = set(sum(blocked_ips,[]))
+	url_set = set(blocked_urls)
+
+	print("Count all subnets: {}".format(len(subnets_set)))
+	print("Count all ip's: {}".format(len(ip_set)))
+	print("Count all urls: {}".format(len(url_set)))
+
+	print("Count of all records: {}".format(len(root)))
+
 
 if __name__ == '__main__':
-	main()
+	parse(dump=FILE_NAME)

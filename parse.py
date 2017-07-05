@@ -11,17 +11,27 @@ def parse(dump):
 	blocked_subnets = []
 	blocked_domains = []
 	blocked_urls = []
+	whitelist = []
 
 	parser = etree.parse(dump)
 	root = parser.getroot()
 
+	# Get whitelist content
+	with open(WHITELIST, 'r') as fd:
+		# for line in fd:
+			# whitelist.append(line)
+		whitelist = fd.read()
+		whitelist = whitelist.split('\n')
+
+	print(whitelist)
+
 	# Govnocode start
 	for node in root:
-		records.append({  'urls':		[item.text for item in node if item.tag == 'url'], 
-						  'domains': 	[item.text for item in node if item.tag == 'domain'],
-						  'ips': 		[item.text for item in node if item.tag == 'ip'],
-						  'subnets': 	[item.text for item in node if item.tag == 'ipSubnet']
-						  })
+		records.append({'urls':	[item.text for item in node if item.tag == 'url'], 
+						'domains': [item.text for item in node if item.tag == 'domain'],
+						'ips':  [item.text for item in node if item.tag == 'ip'],
+						'subnets': [item.text for item in node if item.tag == 'ipSubnet']
+						})
 
 	for record in records:
 		# Determine subnets
@@ -32,21 +42,27 @@ def parse(dump):
 		for domain in record['domains']:
 			temp_domains = []
 			if record['urls'] == []:
-				domain = domain.encode('idna')
-				temp_domains.append(domain.decode())
+				if domain not in whitelist:
+					domain = domain.encode('idna')
+					temp_domains.append(domain.decode())
 
 		# Determine urls and encode to puhhycode
 		for url in record['urls']:
 			res = urlparse(url)
+
 			if res.scheme == 'https':
-				if record['ips'] == []:
-					print("Domain {} is have not IP =(".format(url))
 				for ip in record['ips']:
 					blocked_ips.append(ip)
 
 			elif res.scheme == 'http':
-				domain = res.netloc.encode('idna')
-				url = domain.decode() + ':' + res.path + '*'
+				domain = res.netloc.encode('idna').decode()
+				# Check whitelist
+				if domain in whitelist:
+					break
+				if res.query == '':
+					url = domain + ':' + res.path + '*'
+				else:
+					url = domain + ':' + res.path + '?' + res.query + '*'
 				blocked_urls.append(url)
 
 			# Determine domains and compare it with url

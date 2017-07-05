@@ -1,11 +1,8 @@
 from lxml import etree
 from urllib.parse import urlparse
+from config import *
 
-FILE_NAME = 'dump.xml'
-WHITELIST = 'whitelist.txt'
-
-
-def parse(dump):
+def parse(dumpfile, wlfile):
 	records = []
 	blocked_ips = []
 	blocked_subnets = []
@@ -13,11 +10,11 @@ def parse(dump):
 	blocked_urls = []
 	whitelist = []
 
-	parser = etree.parse(dump)
+	parser = etree.parse(dumpfile)
 	root = parser.getroot()
 
 	# Get whitelist content
-	with open(WHITELIST, 'r') as fd:
+	with open(wlfile, 'r') as fd:
 		# for line in fd:
 			# whitelist.append(line)
 		whitelist = fd.read()
@@ -103,4 +100,4 @@ def parse(dump):
 	 		fd.write(url + "\n")
 
 if __name__ == '__main__':
-	parse(dump=FILE_NAME)
+	parse(dumpfile=DUMP, wlfile=WHITELIST)

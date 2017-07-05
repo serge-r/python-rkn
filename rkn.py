@@ -1,20 +1,11 @@
 from base64 import b64encode, b64decode
 from suds.client import Client
 from argparse import ArgumentParser, FileType
+from parse import parse
+from zipfile import ZipFile
+from config import *
 import logging
 import time
-
-# Test URL
-# URL = 'http://vigruzki.rkn.gov.ru/services/OperatorRequestTest/?wsdl'
-URL = 'http://vigruzki.rkn.gov.ru/services/OperatorRequest/?wsdl'
-# Request format
-DUMPVER = '2.2'
-# Max number of attempts to downloading file
-MAXTRIES = 5
-# Log format
-LOGFORMAT = '%(asctime)s %(levelname)s Line:%(lineno)d %(message)s'
-# Logging levels
-LEVELS = ("DEBUG", "INFO", "ERROR")
 
 
 def sendQuery(wsdlClient, queryFile, queryFileSing):
@@ -142,7 +133,6 @@ def main():
             logger.removeHandler(console)
 
     logger.info("Script started")
-
     # Get url and start processing
     try:
         client = Client(URL, cache=None)
@@ -169,6 +159,18 @@ def main():
 
     args.query.close()
     args.querySign.close()
+
+    logger.info("Begin parsing")
+    try:
+        with ZipFile(args.output) as zipfd:
+            with zipfd.open(DUMP) as dump:
+                parse(dump, WHITELIST)
+                logger.info("Dump successfull")
+    except Exception as e:
+        logger.error("Error when parsing: {}".format(e))
+        exit(1)
+
+    logger.info("Try to connect with SCE")
     logger.info("Script finished")
     exit(0)
 

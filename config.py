@@ -25,11 +25,11 @@ RESULT_FILE="out.txt"
 # SCE Paarameters
 #
 # SCE DEVICE
-SCE_IP='192.168.0.0'
+SCE_IP='192.168.1.1'
 #
 # SCE username and pass
 SCE_USER='user'
 SCE_PASS='pass'
 SCE_ENABLE_PASS='cisco'
 #
-FTP_IP='192.168.0.0'
+FTP_IP='192.168.2.1'

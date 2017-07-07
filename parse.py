@@ -1,5 +1,5 @@
 from lxml import etree
-from urllib.parse import urlparse
+from urllib.parse import urlparse, quote
 from config import *
 
 def parse(dumpfile, wlfile):
@@ -37,6 +37,8 @@ def parse(dumpfile, wlfile):
 
 		# Determine domains - to compare it with url
 		for domain in record['domains']:
+			if domain.endswith('.'):
+				domain = domain[:-1]
 			temp_domains = []
 			if record['urls'] == []:
 				if domain not in whitelist:
@@ -52,14 +54,16 @@ def parse(dumpfile, wlfile):
 					blocked_ips.append(ip)
 
 			elif res.scheme == 'http':
-				domain = res.netloc.encode('idna').decode()
+				domain = res.hostname.encode('idna').decode()
+				if domain.endswith('.'):
+					domain = domain[:-1]
 				# Check whitelist
 				if domain in whitelist:
 					break
 				if res.query == '':
-					url = domain + ':' + res.path + '*'
+					url = domain + quote(res.path)[:256]
 				else:
-					url = domain + ':' + res.path + '?' + res.query + '*'
+					url = domain + quote(res.path)[:256] + '?' + quote(res.query)[:256]
 				blocked_urls.append(url)
 
 			# Determine domains and compare it with url
@@ -87,14 +91,12 @@ def parse(dumpfile, wlfile):
 	print("Count of all records: {}".format(len(root)))
 
 	with open("result.txt", 'w') as fd:
-	 	fd.write("*:")
-
 	 	# Write domains
 	 	for domain in domains_set:
-	 		fd.write(domain + ":*\n")
+	 		fd.write(domain + "\n")
 
 	 	for ip in ip_set:
-	 		fd.write(ip + ":*\n")
+	 		fd.write(ip + "\n")
 
 	 	for url in url_set:
 	 		fd.write(url + "\n")

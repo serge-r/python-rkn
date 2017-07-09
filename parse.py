@@ -101,7 +101,7 @@ def parse(dumpfile = DUMP, wlfile = WHITELIST):
 	logger.info("Count of all records: {}".format(len(root)))
 
 	try:
-		with open(FTP_PATH + "/" + "result.txt", 'w') as fd:
+		with open(FTP_PATH + "/" + RESULT_FILE, 'w') as fd:
 		 	# Write domains
 		 	for domain in domains_set:
 		 		fd.write(domain + "\n")

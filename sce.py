@@ -31,7 +31,7 @@ def upload(filename=RESULT_FILE,
 	ssh = client.invoke_shell()
 
 	ssh.send("enable\n")
-	ssh.send(enble_pass + "\n")
+	ssh.send(enable_pass + "\n")
 	time.sleep(1)
 
 	ssh.send("del " + filename + "\n")

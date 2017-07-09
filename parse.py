@@ -1,8 +1,12 @@
 from lxml import etree
 from urllib.parse import urlparse, quote
 from config import *
+import logging
+import sys
 
-def parse(dumpfile, wlfile):
+
+def parse(dumpfile = DUMP, wlfile = WHITELIST):
+	logger = logging.getLogger("rkn")
 	records = []
 	blocked_ips = []
 	blocked_subnets = []
@@ -10,17 +14,23 @@ def parse(dumpfile, wlfile):
 	blocked_urls = []
 	whitelist = []
 
-	parser = etree.parse(dumpfile)
-	root = parser.getroot()
+	try:
+		parser = etree.parse(dumpfile)
+		root = parser.getroot()
+	except Exception as e:
+		logger.info("Cannot parse file: {}".format(e))
+		return 0
 
-	# Get whitelist content
-	with open(wlfile, 'r') as fd:
-		# for line in fd:
-			# whitelist.append(line)
-		whitelist = fd.read()
-		whitelist = whitelist.split('\n')
-
-	print(whitelist)
+	try:
+		# Get whitelist content
+		with open(wlfile, 'r') as fd:
+			# for line in fd:
+				# whitelist.append(line)
+			whitelist = fd.read()
+			whitelist = whitelist.split('\n')
+	except Exception as e:
+		logger.info("Cannot open whitelist file {}".format(e))
+		whitelist = []
 
 	# Govnocode start
 	for node in root:
@@ -84,22 +94,39 @@ def parse(dumpfile, wlfile):
 	url_set = set(blocked_urls)
 	domains_set = set(blocked_domains)
 
-	print("Count all subnets: {}".format(len(subnets_set)))
-	print("Count all ip's: {}".format(len(ip_set)))
-	print("Count all urls: {}".format(len(url_set)))
-	print("Count all domains: {}".format(len(domains_set)))
-	print("Count of all records: {}".format(len(root)))
+	logger.info("Count all subnets: {}".format(len(subnets_set)))
+	logger.info("Count all ip's: {}".format(len(ip_set)))
+	logger.info("Count all urls: {}".format(len(url_set)))
+	logger.info("Count all domains: {}".format(len(domains_set)))
+	logger.info("Count of all records: {}".format(len(root)))
 
-	with open("result.txt", 'w') as fd:
-	 	# Write domains
-	 	for domain in domains_set:
-	 		fd.write(domain + "\n")
+	try:
+		with open("result.txt", 'w') as fd:
+		 	# Write domains
+		 	for domain in domains_set:
+		 		fd.write(domain + "\n")
 
-	 	for ip in ip_set:
-	 		fd.write(ip + "\n")
+		 	for ip in ip_set:
+		 		fd.write(ip + "\n")
 
-	 	for url in url_set:
-	 		fd.write(url + "\n")
+		 	for url in url_set:
+		 		fd.write(url + "\n")
+	except Exception as e:
+		logger.error("Cannot write output file: {}".format(e))
+		return 0
+	return len(root)
 
 if __name__ == '__main__':
-	parse(dumpfile=DUMP, wlfile=WHITELIST)
+
+	# Init logger
+	logger = logging.getLogger("rkn")
+	logger.setLevel("INFO")
+	formatter = logging.Formatter(LOGFORMAT)
+	console = logging.StreamHandler()
+	console.setFormatter(formatter)
+	logger.addHandler(console)
+	# Parse
+	if len(sys.argv) > 1:
+		parse(dumpfile=sys.argv[1])
+	else:
+		print("Usage: " + sys.argv[0] + " filename")

@@ -4,16 +4,16 @@ from argparse import ArgumentParser, FileType
 from parse import parse
 from zipfile import ZipFile
 from config import *
+import sce
 import logging
 import time
-
 
 def sendQuery(wsdlClient, queryFile, queryFileSing):
     '''
     Send a request to rkn
     Returns code string or None if error
     '''
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger("rkn")
     request = b64encode(queryFile.read()).decode()
     request_sign = b64encode(queryFileSing.read()).decode()
 
@@ -39,7 +39,7 @@ def getFile(wsdlClient, codeString):
     Returns archive or None if error
     '''
     tries = 0
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger("rkn")
 
     try:
         while tries < MAXTRIES:
@@ -109,7 +109,7 @@ def main():
         level = "INFO"
 
     # Init logger
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger("rkn")
     logger.setLevel(level)
 
     formatter = logging.Formatter(LOGFORMAT)
@@ -164,13 +164,20 @@ def main():
     try:
         with ZipFile(args.output) as zipfd:
             with zipfd.open(DUMP) as dump:
-                parse(dump, WHITELIST)
-                logger.info("Dump successfull")
+                if parse(dump, WHITELIST) > 0:
+                    logger.info("Dump successfull")
+                    logger.info("Connecting to SCE")
+                    upload = sce.upload(RESULT_FILE)
+                    if upload == 0:
+                        logger.error("Uploading error")
+                        exit(1)
+                else:
+                    logger.error("Error when parsing")
+                    exit(1)
     except Exception as e:
         logger.error("Error when parsing: {}".format(e))
         exit(1)
 
-    logger.info("Try to connect with SCE")
     logger.info("Script finished")
     exit(0)
 

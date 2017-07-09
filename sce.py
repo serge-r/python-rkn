@@ -1,4 +1,5 @@
 from config import *
+from os import path
 import paramiko
 import logging
 import sys
@@ -15,6 +16,8 @@ def upload(filename=RESULT_FILE,
 			):
 	logger = logging.getLogger("rkn")
 
+	filename = path.basename(filename)
+	
 	client = paramiko.SSHClient()
 	client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 

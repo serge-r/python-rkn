@@ -17,7 +17,7 @@ def upload(filename=RESULT_FILE,
 	logger = logging.getLogger("rkn")
 
 	filename = path.basename(filename)
-	
+
 	client = paramiko.SSHClient()
 	client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
@@ -52,7 +52,7 @@ def upload(filename=RESULT_FILE,
 	ssh.send("sce-url-database clear-all\n")
 	time.sleep(120)
 
-	ssh.send("sce-url-database import cleartext-file" + filename + "flavor-id" + flavor + "\n\n")
+	ssh.send("sce-url-database import cleartext-file " + filename + " flavor-id " + flavor + "\n\n")
 	time.sleep(120)
 
 	ssh.send("exit\n")

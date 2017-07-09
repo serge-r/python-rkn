@@ -19,9 +19,9 @@ def upload(filename=RESULT_FILE,
 	client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
 	try:
-		client.connect(sce,
-					   username,
-					   password,
+		client.connect(hostname=sce,
+					   username=username,
+					   password=password,
 					   look_for_keys=False, 
 					   allow_agent=False)
 	except Exception as e:

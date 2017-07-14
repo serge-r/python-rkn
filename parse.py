@@ -1,18 +1,40 @@
 from lxml import etree
 from urllib.parse import urlparse, quote
-from config import *
+from openpyxl import load_workbook
 import logging
 import sys
+import config
+
+def getWhitelist(wlfile):
+	logger = logging.getLogger("rkn")
+	whitelist = []
+
+	try:
+		wb = load_workbook(wlfile)
+		wblist = wb.active
+	except Exception as e:
+		logger.warning("Cannot get info from whitelist file {}: {}".format(wlfile, e))
+		return []
+	# Get only values from column B
+	cells = wblist['B'][1:]
+	# Encode and crop wildcard(*.)
+	for cell in cells:
+		domain = cell.value.encode('idna')
+		if domain.startswith(b'*.'):
+			domain = domain[2:]
+		whitelist.append(domain.decode())
+	logger.info("Whitelist loaded successfull. Domain counts: {}".format(len(whitelist)))
+	wb.close()
+	return whitelist
 
 
-def parse(dumpfile = DUMP, wlfile = WHITELIST):
+def parse(dumpfile = config.DUMP):
 	logger = logging.getLogger("rkn")
 	records = []
 	blocked_ips = []
 	blocked_subnets = []
 	blocked_domains = []
 	blocked_urls = []
-	whitelist = []
 
 	try:
 		parser = etree.parse(dumpfile)
@@ -21,16 +43,7 @@ def parse(dumpfile = DUMP, wlfile = WHITELIST):
 		logger.info("Cannot parse file: {}".format(e))
 		return 0
 
-	try:
-		# Get whitelist content
-		with open(wlfile, 'r') as fd:
-			# for line in fd:
-				# whitelist.append(line)
-			whitelist = fd.read()
-			whitelist = whitelist.split('\n')
-	except Exception as e:
-		logger.info("Cannot open whitelist file {}".format(e))
-		whitelist = []
+	whitelist = getWhitelist(config.WHITELIST)
 
 	# Govnocode start
 	for node in root:
@@ -101,7 +114,7 @@ def parse(dumpfile = DUMP, wlfile = WHITELIST):
 	logger.info("Count of all records: {}".format(len(root)))
 
 	try:
-		with open(FTP_PATH + "/" + RESULT_FILE, 'w') as fd:
+		with open(config.FTP_PATH + "/" + config.RESULT_FILE, 'w') as fd:
 		 	# Write domains
 		 	for domain in domains_set:
 		 		fd.write(domain + "\n")
@@ -117,11 +130,10 @@ def parse(dumpfile = DUMP, wlfile = WHITELIST):
 	return len(root)
 
 if __name__ == '__main__':
-
 	# Init logger
 	logger = logging.getLogger("rkn")
 	logger.setLevel("INFO")
-	formatter = logging.Formatter(LOGFORMAT)
+	formatter = logging.Formatter(config.LOGFORMAT)
 	console = logging.StreamHandler()
 	console.setFormatter(formatter)
 	logger.addHandler(console)

@@ -16,7 +16,7 @@ LEVELS = ("DEBUG", "INFO","WARNING", "ERROR")
 # Dump file name
 DUMP = "dump.xml"
 # Whitelist file
-WHITELIST = "whitelist.txt"
+WHITELIST = "list.xlsx"
 # Result file
 RESULT_FILE = "out.txt"
 # Output dir
